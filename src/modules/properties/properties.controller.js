@@ -3,7 +3,12 @@ import { validateCreateProperty } from "../../utils/validator.js";
 
 class PropertiesController {
   static async create(req, res) {
-    const validation = validateCreateProperty.safeParse(req.body);
+    const payload = { ...req.body };
+    if (req.files) {
+      payload.images = req.files.map((file) => file.path.replace(/\\/g, "/"));
+    }
+
+    const validation = validateCreateProperty.safeParse(payload);
 
     if (!validation.success) {
       return res.status(400).json({
@@ -32,18 +37,16 @@ class PropertiesController {
   }
   static async getAll(req, res) {
     try {
-      const properties = await Properties.getAll();
-
-      return res.status(201).json({
+      const properties = await Properties.getAll(req.query);
+      return res.status(200).json({
         success: true,
-        message: "Properties fetched successfylly",
-        properties,
+        properties: properties,
       });
     } catch (error) {
       return res.status(500).json({
         success: false,
-        message: "Error Fetching properties",
-        errors: error.message,
+        message: "Failed to fetch properties",
+        error: error.message,
       });
     }
   }
@@ -83,7 +86,10 @@ class PropertiesController {
       });
     }
 
-    const payload = req.body;
+    const payload = { ...req.body };
+    if (req.files && req.files.length > 0) {
+      payload.images = req.files.map((file) => file.path.replace(/\\/g, "/"));
+    }
 
     try {
       const property = await Properties.update(propertyId, payload);
@@ -127,6 +133,34 @@ class PropertiesController {
       });
     }
   }
+  static async toggleLike(req, res) {
+    const { propertyId } = req.params;
+    const { increment } = req.body;
+
+    if (!propertyId) {
+      return res.status(404).json({
+        success: false,
+        message: "Property ID is required",
+      });
+    }
+
+    try {
+      const result = await Properties.toggleLike(propertyId, increment);
+
+      return res.status(200).json({
+        success: true,
+        message: `Property ${increment ? "liked" : "unliked"} successfully`,
+        likes: result.likes,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Error toggling like",
+        errors: error.message,
+      });
+    }
+  }
+
 }
 
 export default PropertiesController;

@@ -4,7 +4,7 @@ import { Env } from "../config/env.config.js";
 const COOKIE_NAME = "access_token";
 const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
 
-export const setJWTCookie = (res, user) => {
+export const setJWTAuthCookie = (res, user) => {
   const { id, email } = user;
   const payload = {
     id,

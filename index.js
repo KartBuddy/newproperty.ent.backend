@@ -9,6 +9,9 @@ import { Env } from "./src/config/env.config.js";
 import pool from "./src/config/db.config.js";
 import authRoutes from "./src/routes/auth/auth.routes.js";
 import propertiesRoutes from "./src/routes/properties/properties.route.js";
+import inquiryRoutes from "./src/routes/properties/inquiry.route.js";
+import dashboardRoutes from "./src/routes/dashboard/dashboard.routes.js";
+import contactRoutes from "./src/routes/contact/contact.routes.js";
 
 const app = express();
 
@@ -19,12 +22,16 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use("/uploads", express.static("uploads"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertiesRoutes);
+app.use("/api/inquiries", inquiryRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/contact", contactRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

@@ -20,10 +20,8 @@ class Properties {
         pincode,
         owner_name,
         owner_contact,
+        images,
       } = payload;
-
-      // TODO
-      //Property image will be added later
 
       const query = `
         INSERT INTO properties (
@@ -41,10 +39,11 @@ class Properties {
             state,
             pincode,
             owner_name,
-            owner_contact
+            owner_contact,
+            images
         ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-            $11, $12, $13, $14, $15
+            $11, $12, $13, $14, $15, $16
          ) RETURNING *;
       `;
 
@@ -64,6 +63,7 @@ class Properties {
         pincode,
         owner_name,
         owner_contact,
+        images,
       ];
 
       const result = await client.query(query, values);
@@ -72,16 +72,18 @@ class Properties {
         throw new Error("Error creating properties.");
       }
 
-      return result.rows;
+      return result.rows[0];
     } catch (error) {
-      console.log("Failed to create properties");
+      console.error("Failed to create properties:", error.message);
+      throw error;
+    } finally {
       client.release();
     }
   }
 
-  static async getAll() {
+  static async getAll(filters = {}) {
     try {
-      const query = `
+      let query = `
             SELECT 
                 id,
                 title,
@@ -98,13 +100,38 @@ class Properties {
                 state,
                 pincode,
                 owner_name,
-                owner_contact
+                owner_contact,
+                images,
+                likes,
                 created_at
             FROM properties
-            ORDER BY created_at DESC;
-        `;
+      `;
 
-      const result = await pool.query(query);
+      const values = [];
+      const conditions = [];
+
+      if (filters.property_type && filters.property_type !== 'all') {
+        conditions.push(`property_type = $${values.length + 1}`);
+        values.push(filters.property_type);
+      }
+
+      if (filters.status && filters.status !== 'all') {
+        conditions.push(`status = $${values.length + 1}`);
+        values.push(filters.status);
+      }
+
+      if (filters.city) {
+        conditions.push(`city ILIKE $${values.length + 1}`);
+        values.push(`%${filters.city}%`);
+      }
+
+      if (conditions.length > 0) {
+        query += ` WHERE ` + conditions.join(" AND ");
+      }
+
+      query += ` ORDER BY created_at DESC;`;
+
+      const result = await pool.query(query, values);
       return result.rows;
     } catch (error) {
       console.log("Failed to fetch properties: ", error.message);
@@ -134,7 +161,9 @@ class Properties {
 
       return result.rows[0];
     } catch (error) {
-      console.log("Failed to fetch property with provided id");
+      console.error("Failed to fetch property:", error.message);
+      throw error;
+    } finally {
       client.release();
     }
   }
@@ -163,6 +192,7 @@ class Properties {
         "pincode",
         "owner_name",
         "owner_contact",
+        "images",
       ];
 
       const fields = Object.keys(payload).filter((key) =>
@@ -222,6 +252,25 @@ class Properties {
       console.log(error);
       client.release();
       throw error;
+    }
+  }
+
+  static async toggleLike(propertyId, increment = true) {
+    const client = await pool.connect();
+    try {
+      const query = `
+        UPDATE properties 
+        SET likes = likes + $1 
+        WHERE id = $2 
+        RETURNING likes;
+      `;
+      const result = await client.query(query, [increment ? 1 : -1, propertyId]);
+      if (result.rowCount === 0) {
+        throw new Error("Property not found");
+      }
+      return result.rows[0];
+    } finally {
+      client.release();
     }
   }
 }
