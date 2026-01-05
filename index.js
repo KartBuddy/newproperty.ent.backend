@@ -17,7 +17,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: Env.FRONTEND_URL,
+    origin: Env.FRONTEND_URL || "https://www.newproperty.co.in",
     credentials: true,
   })
 );
