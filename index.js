@@ -43,7 +43,7 @@ const startServer = async () => {
     console.log("Database connected");
 
     app.listen(Env.PORT, () => {
-      console.log(`Server running on http://localhost:${Env.PORT}`);
+      console.log(`Server running on PORT:${Env.PORT}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error.message);

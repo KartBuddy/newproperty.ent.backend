@@ -1,4 +1,4 @@
-import LandingSliderModal from "../../models/landing-slider/landing-slider.model";
+import LandingSliderModal from "../../models/landing-slider-modal/landing-slider-modal.js";
 
 class LandingSliderController {
   static async create(req, res) {
