@@ -63,7 +63,7 @@ class PropertiesController {
     try {
       const property = await Properties.getSingle(propertyId);
 
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
         message: "Got property with provided property id",
         property,

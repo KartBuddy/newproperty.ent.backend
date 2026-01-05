@@ -15,15 +15,10 @@ export const validateCreateProperty = z.object({
   status: z
     .enum(["available", "sold", "rented", "under_construction"])
     .default("available"),
-  price: z.coerce
-    .number()
-    .positive({ message: "Price must be greater than 0" }),
-  area_sqft: z.coerce
-    .number()
-    .int()
-    .positive({ message: "Area must be a positive number" }),
-  bedrooms: z.coerce.number().int().min(0).optional(),
-  bathrooms: z.coerce.number().int().min(0).optional(),
+  price: z.preprocess((val) => (val === "" ? undefined : val), z.coerce.number().positive({ message: "Price must be greater than 0" })),
+  area_sqft: z.preprocess((val) => (val === "" ? undefined : val), z.coerce.number().int().positive({ message: "Area must be a positive number" })),
+  bedrooms: z.preprocess((val) => (val === "" ? null : val), z.coerce.number().int().min(0).nullable().optional()),
+  bathrooms: z.preprocess((val) => (val === "" ? null : val), z.coerce.number().int().min(0).nullable().optional()),
   parking: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
   address: z.string().min(1, { message: "Address is required" }),
   city: z.string().min(1, { message: "City is required" }),

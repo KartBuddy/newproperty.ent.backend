@@ -12,12 +12,18 @@ import propertiesRoutes from "./src/routes/properties/properties.route.js";
 import inquiryRoutes from "./src/routes/properties/inquiry.route.js";
 import dashboardRoutes from "./src/routes/dashboard/dashboard.routes.js";
 import contactRoutes from "./src/routes/contact/contact.routes.js";
-
+``
 const app = express();
 
+// CORS Configuration - [CRITICAL: REMOVE LOCALHOST FALLBACKS IN PRODUCTION]
 app.use(
   cors({
-    origin: Env.FRONTEND_URL || "https://www.newproperty.co.in",
+    origin: [
+      Env.FRONTEND_URL,
+      "https://newproperty.in",
+      "https://www.newproperty.in",
+      "http://localhost:5173",
+    ],
     credentials: true,
   })
 );

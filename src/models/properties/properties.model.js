@@ -186,7 +186,12 @@ class Properties {
         throw new Error("No valid fields provided to update");
       }
 
-      const values = fields.map((field) => payload[field]);
+      const values = fields.map((field) => {
+        if (field === "images" && Array.isArray(payload[field])) {
+          return JSON.stringify(payload[field]);
+        }
+        return payload[field];
+      });
 
       const setQuery = fields
         .map((field, index) => `${field} = $${index + 1}`)
@@ -237,7 +242,7 @@ class Properties {
     try {
       const query = `
         UPDATE properties 
-        SET likes = likes + $1 
+        SET likes = COALESCE(likes, 0) + $1 
         WHERE id = $2 
         RETURNING likes;
       `;
