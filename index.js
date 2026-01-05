@@ -12,18 +12,23 @@ import propertiesRoutes from "./src/routes/properties/properties.route.js";
 import inquiryRoutes from "./src/routes/properties/inquiry.route.js";
 import dashboardRoutes from "./src/routes/dashboard/dashboard.routes.js";
 import contactRoutes from "./src/routes/contact/contact.routes.js";
-``
+
 const app = express();
 
-// CORS Configuration - [CRITICAL: REMOVE LOCALHOST FALLBACKS IN PRODUCTION]
+const allowedOrigins = [
+  "https://newproperty.co.in",
+  "https://www.newproperty.co.in",
+];
+
 app.use(
   cors({
-    origin: [
-      Env.FRONTEND_URL,
-      "https://newproperty.in",
-      "https://www.newproperty.in",
-      "http://localhost:5173",
-    ],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
