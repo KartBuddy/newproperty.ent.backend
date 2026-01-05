@@ -3,7 +3,7 @@ import ContactModel from "../../models/contact/contact.model.js";
 class ContactController {
     static async submitContact(req, res) {
         try {
-            const { name, email, subject, message } = req.body;
+            const { name, email, subject, message, phone } = req.body;
 
             if (!name || !email || !message) {
                 return res.status(400).json({
@@ -17,6 +17,7 @@ class ContactController {
                 email,
                 subject: subject || "No Subject",
                 message,
+                phone: phone || "Not Provided",
             });
 
             res.status(201).json({
