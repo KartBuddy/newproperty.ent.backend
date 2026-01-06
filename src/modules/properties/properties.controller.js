@@ -106,17 +106,39 @@ class PropertiesController {
   }
 
   static async update(req, res) {
-    const payload = { ...req.body };
-    if (req.files?.length) {
-      payload.images = req.files.map(f => f.path.replace(/\\/g, "/"));
+    try {
+      const payload = { ...req.body };
+
+      if (req.files?.length) {
+        payload.images = req.files.map(f => f.path.replace(/\\/g, "/"));
+      }
+
+      const validation = validateCreateProperty.safeParse(payload);
+
+      if (!validation.success) {
+        return res.status(400).json({
+          success: false,
+          errors: validation.error.errors.map(e => ({
+            field: e.path[0],
+            message: e.message,
+          })),
+        });
+      }
+
+      const property = await Properties.update(
+        req.params.propertyId,
+        validation.data
+      );
+
+      res.json({ success: true, property });
+    } catch (error) {
+      console.error("Update error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error updating property",
+        error: error.message,
+      });
     }
-
-    const property = await Properties.update(
-      req.params.propertyId,
-      payload
-    );
-
-    res.json({ success: true, property });
   }
 
   static async delete(req, res) {
