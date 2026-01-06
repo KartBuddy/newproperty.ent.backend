@@ -34,6 +34,46 @@ class Inquiry {
             throw error;
         }
     }
+
+    static async getByPropertyId(propertyId) {
+        if (!propertyId) throw new Error("Property id is required");
+
+        const query = `
+        SELECT 
+            i.*,
+            p.title AS property_title
+        FROM inquiries i
+        LEFT JOIN properties p ON i.property_id = p.id
+        WHERE i.property_id = $1
+        ORDER BY i.created_at DESC;
+    `;
+
+        const result = await pool.query(query, [propertyId]);
+        return result.rows;
+    }
+
+    static async getById(id) {
+        const query = `
+        SELECT 
+            i.*,
+            p.title AS property_title
+        FROM inquiries i
+        LEFT JOIN properties p ON i.property_id = p.id
+        WHERE i.id = $1
+        LIMIT 1;
+    `;
+
+        const result = await pool.query(query, [id]);
+        return result.rows[0] || null;
+    }
+
+    static async delete(id) {
+        const result = await pool.query(
+            `DELETE FROM inquiries WHERE id = $1 RETURNING *`,
+            [id]
+        );
+        return result.rows[0] || null;
+    }
 }
 
 export default Inquiry;

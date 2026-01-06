@@ -43,6 +43,39 @@ class InquiryController {
             });
         }
     }
+
+    static async getByPropertyId(req, res) {
+        try {
+            const { propertyId } = req.params;
+            if (!propertyId) return res.status(400).json({ success: false, message: "propertyId required" });
+            const inquiries = await Inquiry.getByPropertyId(propertyId);
+            return res.status(200).json({ success: true, inquiries });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: "Failed to fetch inquiries", error: error.message });
+        }
+    }
+
+    static async getById(req, res) {
+        try {
+            const { id } = req.params;
+            const inquiry = await Inquiry.getById(id);
+            if (!inquiry) return res.status(404).json({ success: false, message: "Not found" });
+            return res.status(200).json({ success: true, inquiry });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: "Failed to fetch inquiry", error: error.message });
+        }
+    }
+
+    static async delete(req, res) {
+        try {
+            const { id } = req.params;
+            const removed = await Inquiry.delete(id);
+            if (!removed) return res.status(404).json({ success: false, message: "Not found" });
+            return res.status(200).json({ success: true, message: "Deleted", inquiry: removed });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: "Failed to delete", error: error.message });
+        }
+    }
 }
 
 export default InquiryController;
