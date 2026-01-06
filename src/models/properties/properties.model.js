@@ -1,7 +1,7 @@
 import pool from "../../config/db.config.js";
 
 class Properties {
-  static async create(payload) {
+  static async create(payload, options = { source: "admin" }) {
     const client = await pool.connect();
     try {
       const {
@@ -23,28 +23,36 @@ class Properties {
         images,
       } = payload;
 
+      const approval_status =
+        options.source === "client" ? "pending" : "approved";
+
+      const created_by = options.source;
+
       const query = `
         INSERT INTO properties (
-            title,
-            description,
-            property_type,
-            status,
-            price,
-            area_sqft,
-            bedrooms,
-            bathrooms,
-            parking,
-            address,
-            city,
-            state,
-            pincode,
-            owner_name,
-            owner_contact,
-            images
+          title,
+          description,
+          property_type,
+          status,
+          price,
+          area_sqft,
+          bedrooms,
+          bathrooms,
+          parking,
+          address,
+          city,
+          state,
+          pincode,
+          owner_name,
+          owner_contact,
+          images,
+          approval_status,
+          created_by
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-            $11, $12, $13, $14, $15, $16
-        ) RETURNING *;
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+          $11,$12,$13,$14,$15,$16,$17,$18
+        )
+        RETURNING *;
       `;
 
       const values = [
@@ -64,198 +72,174 @@ class Properties {
         owner_name,
         owner_contact,
         images ? JSON.stringify(images) : null,
+        approval_status,
+        created_by,
       ];
 
       const result = await client.query(query, values);
-
-      if (result.rowCount === 0) {
-        throw new Error("Error creating properties.");
-      }
-
       return result.rows[0];
     } finally {
       client.release();
     }
   }
 
-  static async getAll(filters = {}) {
-    let query = `
-      SELECT 
-        id,
-        title,
-        description,
-        property_type,
-        status,
-        price,
-        area_sqft,
-        bedrooms,
-        bathrooms,
-        parking,
-        address,
-        city,
-        state,
-        pincode,
-        owner_name,
-        owner_contact,
-        images,
-        likes,
-        created_at
-      FROM properties
-    `;
-
+  static async getAll(filters = {}, isAdmin = false) {
+    let query = `SELECT * FROM properties`;
     const values = [];
     const conditions = [];
 
+    if (!isAdmin) {
+      conditions.push(`approval_status = 'approved'`);
+    }
+
     if (filters.property_type && filters.property_type !== "all") {
-      conditions.push(`property_type = $${values.length + 1}`);
       values.push(filters.property_type);
+      conditions.push(`property_type = $${values.length}`);
     }
 
     if (filters.status && filters.status !== "all") {
-      conditions.push(`status = $${values.length + 1}`);
       values.push(filters.status);
+      conditions.push(`status = $${values.length}`);
     }
 
     if (filters.city) {
-      conditions.push(`city ILIKE $${values.length + 1}`);
       values.push(`%${filters.city}%`);
+      conditions.push(`city ILIKE $${values.length}`);
     }
 
     if (conditions.length > 0) {
-      query += ` WHERE ` + conditions.join(" AND ");
+      query += ` WHERE ${conditions.join(" AND ")}`;
     }
 
-    query += ` ORDER BY created_at DESC;`;
+    query += ` ORDER BY created_at DESC`;
 
     const result = await pool.query(query, values);
     return result.rows;
   }
 
-  static async getSingle(propertyId) {
-    const client = await pool.connect();
-    try {
-      const query = `
-        SELECT * FROM properties
-        WHERE id = $1
-        LIMIT 1;
-      `;
+  static async getAllAdmin(filters = {}) {
+    let query = `
+    SELECT *
+    FROM properties
+  `;
 
-      const result = await client.query(query, [propertyId]);
+    const values = [];
+    const conditions = [];
 
-      if (result.rowCount === 0) {
-        throw new Error("Property not found");
-      }
-
-      return result.rows[0];
-    } finally {
-      client.release();
+    if (filters.approval_status) {
+      conditions.push(`approval_status = $${values.length + 1}`);
+      values.push(filters.approval_status);
     }
+
+    if (filters.created_by) {
+      conditions.push(`created_by = $${values.length + 1}`);
+      values.push(filters.created_by);
+    }
+
+    if (conditions.length) {
+      query += " WHERE " + conditions.join(" AND ");
+    }
+
+    query += " ORDER BY created_at DESC";
+
+    const result = await pool.query(query, values);
+    return result.rows;
+  }
+
+
+  static async getSingle(propertyId) {
+    const result = await pool.query(
+      `SELECT * FROM properties WHERE id = $1 LIMIT 1`,
+      [propertyId]
+    );
+
+    if (!result.rows.length) {
+      throw new Error("Property not found");
+    }
+
+    return result.rows[0];
+  }
+
+  static async getPending() {
+    const result = await pool.query(`
+      SELECT * FROM properties
+      WHERE approval_status = 'pending'
+      ORDER BY created_at DESC
+    `);
+    return result.rows;
   }
 
   static async update(propertyId, payload) {
-    const client = await pool.connect();
-    try {
-      const allowedFields = [
-        "title",
-        "description",
-        "property_type",
-        "status",
-        "price",
-        "area_sqft",
-        "bedrooms",
-        "bathrooms",
-        "parking",
-        "address",
-        "city",
-        "state",
-        "pincode",
-        "owner_name",
-        "owner_contact",
-        "images",
-      ];
+    const allowedFields = [
+      "title",
+      "description",
+      "property_type",
+      "status",
+      "price",
+      "area_sqft",
+      "bedrooms",
+      "bathrooms",
+      "parking",
+      "address",
+      "city",
+      "state",
+      "pincode",
+      "owner_name",
+      "owner_contact",
+      "images",
+    ];
 
-      if (payload.images) {
-        payload.images = JSON.stringify(payload.images);
-      }
+    const fields = Object.keys(payload).filter((key) =>
+      allowedFields.includes(key)
+    );
 
-      const fields = Object.keys(payload).filter((key) =>
-        allowedFields.includes(key)
-      );
+    if (!fields.length) throw new Error("No valid fields provided");
 
-      if (fields.length === 0) {
-        throw new Error("No valid fields provided to update");
-      }
+    const values = fields.map((f) =>
+      f === "images" ? JSON.stringify(payload[f]) : payload[f]
+    );
 
-      const values = fields.map((field) => {
-        if (field === "images" && Array.isArray(payload[field])) {
-          return JSON.stringify(payload[field]);
-        }
-        return payload[field];
-      });
+    const setClause = fields
+      .map((f, i) => `${f} = $${i + 1}`)
+      .join(", ");
 
-      const setQuery = fields
-        .map((field, index) => `${field} = $${index + 1}`)
-        .join(", ");
+    const result = await pool.query(
+      `UPDATE properties SET ${setClause} WHERE id = $${fields.length + 1
+      } RETURNING *`,
+      [...values, propertyId]
+    );
 
-      const query = `
-        UPDATE properties
-        SET ${setQuery}
-        WHERE id = $${fields.length + 1}
-        RETURNING *;
-      `;
+    return result.rows[0];
+  }
 
-      const result = await client.query(query, [...values, propertyId]);
-
-      if (result.rowCount === 0) {
-        throw new Error("Property not found");
-      }
-
-      return result.rows[0];
-    } finally {
-      client.release();
-    }
+  static async updateApproval(propertyId, status) {
+    const result = await pool.query(
+      `UPDATE properties
+       SET approval_status = $1
+       WHERE id = $2
+       RETURNING *`,
+      [status, propertyId]
+    );
+    return result.rows[0];
   }
 
   static async delete(propertyId) {
-    const client = await pool.connect();
-    try {
-      const query = `
-        DELETE FROM properties
-        WHERE id = $1
-        RETURNING id;
-      `;
-
-      const result = await client.query(query, [propertyId]);
-
-      if (result.rowCount === 0) {
-        throw new Error("Property not found");
-      }
-
-      return result.rows[0];
-    } finally {
-      client.release();
-    }
+    const result = await pool.query(
+      `DELETE FROM properties WHERE id = $1 RETURNING id`,
+      [propertyId]
+    );
+    return result.rows[0];
   }
 
   static async toggleLike(propertyId, increment = true) {
-    const client = await pool.connect();
-    try {
-      const query = `
-        UPDATE properties 
-        SET likes = COALESCE(likes, 0) + $1 
-        WHERE id = $2 
-        RETURNING likes;
-      `;
-      const result = await client.query(query, [increment ? 1 : -1, propertyId]);
-
-      if (result.rowCount === 0) {
-        throw new Error("Property not found");
-      }
-
-      return result.rows[0];
-    } finally {
-      client.release();
-    }
+    const result = await pool.query(
+      `UPDATE properties
+       SET likes = likes + $1
+       WHERE id = $2
+       RETURNING likes`,
+      [increment ? 1 : -1, propertyId]
+    );
+    return result.rows[0];
   }
 }
 
