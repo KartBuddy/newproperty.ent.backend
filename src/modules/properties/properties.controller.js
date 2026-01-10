@@ -5,18 +5,20 @@ class PropertiesController {
   static async create(req, res) {
     const payload = { ...req.body };
 
-    if (req.files) {
+    if (req.files && Array.isArray(req.files)) {
       payload.images = req.files.map(f => f.path.replace(/\\/g, "/"));
     }
 
     const validation = validateCreateProperty.safeParse(payload);
     if (!validation.success) {
+      const errorDetails = validation.error?.errors?.map(e => ({
+        field: e.path?.[0] || 'unknown',
+        message: e.message || 'Validation error',
+      })) || [{ message: 'Invalid request data' }];
+      
       return res.status(400).json({
         success: false,
-        errors: validation.error.errors.map(e => ({
-          field: e.path[0],
-          message: e.message,
-        })),
+        errors: errorDetails,
       });
     }
 
@@ -30,15 +32,20 @@ class PropertiesController {
   static async requestProperty(req, res) {
     const payload = { ...req.body };
 
-    if (req.files) {
+    if (req.files && Array.isArray(req.files)) {
       payload.images = req.files.map(f => f.path.replace(/\\/g, "/"));
     }
 
     const validation = validateCreateProperty.safeParse(payload);
     if (!validation.success) {
+      const errorDetails = validation.error?.errors?.map(e => ({
+        field: e.path?.[0] || 'unknown',
+        message: e.message || 'Validation error',
+      })) || [{ message: 'Invalid request data' }];
+      
       return res.status(400).json({
         success: false,
-        errors: validation.error.errors,
+        errors: errorDetails,
       });
     }
 
