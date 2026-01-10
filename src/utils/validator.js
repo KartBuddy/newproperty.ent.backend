@@ -26,55 +26,62 @@ export const validateCreateProperty = z.object({
   
   // Pricing (conditional based on transaction_type)
   price: z.preprocess(
-    (val) => (val === "" ? undefined : val), 
-    z.coerce.number().positive({ message: "Sale price must be greater than 0" })
-  ).optional(),
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().positive({ message: "Sale price must be greater than 0" }).optional()
+  ),
   monthly_rent: z.preprocess(
-    (val) => (val === "" ? undefined : val),
-    z.coerce.number().positive({ message: "Monthly rent must be greater than 0" })
-  ).optional(),
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().positive({ message: "Monthly rent must be greater than 0" }).optional()
+  ),
   security_deposit: z.preprocess(
-    (val) => (val === "" ? undefined : val),
-    z.coerce.number().nonnegative()
-  ).optional(),
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().nonnegative().optional()
+  ),
   
   // Status
   status: z.enum(["available", "sold", "rented"]).default("available"),
   
   // Area measurements
   area_sqft: z.preprocess(
-    (val) => (val === "" ? undefined : val), 
-    z.coerce.number().int().positive({ message: "Area must be a positive number" })
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().positive({ message: "Area must be a positive number" })
   ),
   usable_carpet_area: z.preprocess(
-    (val) => (val === "" ? null : val),
-    z.coerce.number().int().positive().nullable().optional()
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().positive().optional()
   ),
   rera_carpet_area: z.preprocess(
-    (val) => (val === "" ? null : val),
-    z.coerce.number().int().positive().nullable().optional()
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().positive().optional()
   ),
   
   // Room configuration
   bedrooms: z.preprocess(
-    (val) => (val === "" ? null : val), 
-    z.coerce.number().int().min(0).nullable().optional()
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().int().min(0).optional()
   ),
   bathrooms: z.preprocess(
-    (val) => (val === "" ? null : val), 
-    z.coerce.number().int().min(0).nullable().optional()
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().int().min(0).optional()
   ),
   kitchens: z.preprocess(
-    (val) => (val === "" ? null : val),
-    z.coerce.number().int().min(0).nullable().optional()
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().int().min(0).optional()
   ),
   halls: z.preprocess(
-    (val) => (val === "" ? null : val),
-    z.coerce.number().int().min(0).nullable().optional()
+    (val) => val === "" || val === undefined ? undefined : Number(val),
+    z.number().int().min(0).optional()
   ),
-  bhk_type: z.string().optional(), // e.g., "2 BHK", "3 BHK", "Studio"
+  bhk_type: z.preprocess(
+    (val) => val === "" ? undefined : val,
+    z.string().optional()
+  ),
   parking: z.preprocess(
-    (val) => val === 'true' || val === true, 
+    (val) => {
+      if (val === 'false' || val === false) return false;
+      if (val === 'true' || val === true) return true;
+      return false;
+    },
     z.boolean()
   ).default(false),
   
@@ -105,11 +112,27 @@ export const validateCreateProperty = z.object({
   ).optional(),
   
   // Furnishing
-  furnishing_status: z.enum(
-    ["furnished", "semi-furnished", "unfurnished"],
-    { message: "Invalid furnishing status" }
-  ).optional(),
-  furnishings: z.array(z.string()).optional(),
+  furnishing_status: z.preprocess(
+    (val) => val === "" ? undefined : val,
+    z.enum(
+      ["furnished", "semi-furnished", "unfurnished"],
+      { message: "Invalid furnishing status" }
+    ).optional()
+  ),
+  furnishings: z.preprocess(
+    (val) => {
+      if (!val) return [];
+      if (typeof val === 'string') {
+        try {
+          return JSON.parse(val);
+        } catch (e) {
+          return [];
+        }
+      }
+      return Array.isArray(val) ? val : [];
+    },
+    z.array(z.string()).default([])
+  ),
   
   // Owner info
   owner_name: z.string().min(1, { message: "Owner name is required" }),

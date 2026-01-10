@@ -40,6 +40,12 @@ class Properties {
         truck_access_available,
         furnishing_status,
         furnishings,
+        core_building_features,
+        convenience_services,
+        fitness_wellness,
+        families_recreation,
+        social_leisure_spaces,
+        commercial_amenities,
         owner_name,
         owner_contact,
         images,
@@ -58,13 +64,16 @@ class Properties {
           street_road_name, landmark, local_area_sector, area_locality,
           address, city, district, state, pincode,
           truck_access_available, furnishing_status, furnishings,
+          core_building_features, convenience_services, fitness_wellness,
+          families_recreation, social_leisure_spaces, commercial_amenities,
           owner_name, owner_contact, images,
           approval_status, created_by
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
           $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
           $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-          $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
+          $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
+          $41, $42, $43, $44, $45, $46
         )
         RETURNING *;
       `;
@@ -104,12 +113,18 @@ class Properties {
         pincode,
         truck_access_available || false,
         furnishing_status || null,
-        furnishings ? JSON.stringify(furnishings) : '[]',
+        furnishings ? JSON.stringify(furnishings) : '{}',
+        core_building_features ? JSON.stringify(core_building_features) : '{}',
+        convenience_services ? JSON.stringify(convenience_services) : '{}',
+        fitness_wellness ? JSON.stringify(fitness_wellness) : '{}',
+        families_recreation ? JSON.stringify(families_recreation) : '{}',
+        social_leisure_spaces ? JSON.stringify(social_leisure_spaces) : '{}',
+        commercial_amenities ? JSON.stringify(commercial_amenities) : '{}',
         owner_name,
         owner_contact,
         images ? JSON.stringify(images) : null,
         approval_status,
-        created_by,
+        created_by
       ];
 
       const result = await client.query(query, values);
@@ -225,6 +240,8 @@ class Properties {
       "street_road_name", "landmark", "local_area_sector", "area_locality",
       "address", "city", "district", "state", "pincode",
       "truck_access_available", "furnishing_status", "furnishings",
+      "core_building_features", "convenience_services", "fitness_wellness",
+      "families_recreation", "social_leisure_spaces", "commercial_amenities",
       "owner_name", "owner_contact", "images"
     ];
 
@@ -235,7 +252,9 @@ class Properties {
     if (!fields.length) throw new Error("No valid fields provided");
 
     const values = fields.map((f) => {
-      if (f === "images" || f === "furnishings") {
+      if (["images", "furnishings", "core_building_features", "convenience_services", 
+           "fitness_wellness", "families_recreation", "social_leisure_spaces", 
+           "commercial_amenities"].includes(f)) {
         return Array.isArray(payload[f]) ? JSON.stringify(payload[f]) : payload[f];
       }
       if ((f === "bedrooms" || f === "bathrooms" || f === "kitchens" || f === "halls") && payload[f] === "") {
