@@ -102,9 +102,6 @@ export const validateCreateProperty = z.object({
   state: z.string().min(1, { message: "State is required" }),
   pincode: z.string().regex(/^[0-9]{6}$/, { message: "Pincode must be exactly 6 digits" }),
   
-  // Full address as text (for backward compatibility and search)
-  address: z.string().min(1, { message: "Address is required" }),
-  
   // Accessibility
   truck_access_available: z.preprocess(
     (val) => val === 'true' || val === true,
