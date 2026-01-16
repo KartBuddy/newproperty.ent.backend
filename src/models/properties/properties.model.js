@@ -16,7 +16,6 @@ class Properties {
         security_deposit,
         area_sqft,
         usable_carpet_area,
-        rera_carpet_area,
         bedrooms,
         bathrooms,
         kitchens,
@@ -32,7 +31,6 @@ class Properties {
         landmark,
         local_area_sector,
         area_locality,
-        address,
         city,
         district,
         state,
@@ -58,11 +56,11 @@ class Properties {
         INSERT INTO properties (
           title, description, property_category, property_type, transaction_type,
           status, price, monthly_rent, security_deposit,
-          area_sqft, usable_carpet_area, rera_carpet_area,
+          area_sqft, usable_carpet_area,
           bedrooms, bathrooms, kitchens, halls, bhk_type, parking,
           flat_office_no, wing_block_tower, floor_no, building_society_name, plot_cts_survey_no,
           street_road_name, landmark, local_area_sector, area_locality,
-          address, city, district, state, pincode,
+          city, district, state, pincode,
           truck_access_available, furnishing_status, furnishings,
           core_building_features, convenience_services, fitness_wellness,
           families_recreation, social_leisure_spaces, commercial_amenities,
@@ -73,7 +71,7 @@ class Properties {
           $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
           $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
           $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
-          $41, $42, $43, $44, $45, $46
+          $41, $42, $43, $44
         )
         RETURNING *;
       `;
@@ -90,7 +88,6 @@ class Properties {
         security_deposit || null,
         area_sqft,
         usable_carpet_area || null,
-        rera_carpet_area || null,
         bedrooms || null,
         bathrooms || null,
         kitchens || null,
@@ -106,7 +103,6 @@ class Properties {
         landmark || null,
         local_area_sector || null,
         area_locality || null,
-        address,
         city,
         district,
         state,
@@ -234,7 +230,7 @@ class Properties {
     const allowedFields = [
       "title", "description", "property_category", "property_type", "transaction_type",
       "status", "price", "monthly_rent", "security_deposit",
-      "area_sqft", "usable_carpet_area", "rera_carpet_area",
+      "area_sqft", "usable_carpet_area",
       "bedrooms", "bathrooms", "kitchens", "halls", "bhk_type", "parking",
       "flat_office_no", "wing_block_tower", "floor_no", "building_society_name", "plot_cts_survey_no",
       "street_road_name", "landmark", "local_area_sector", "area_locality",
